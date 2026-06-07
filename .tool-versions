@@ -1,0 +1,4 @@
+terraform 1.7.5
+tflint 0.51.1
+tfsec 1.28.5
+python 3.12.4
