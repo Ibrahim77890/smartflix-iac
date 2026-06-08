@@ -1,10 +1,12 @@
 output "foundation_contract" {
-  description = "Phase 01 proof that the uat root is wired to all reusable modules."
+  description = "Phase 04 proof that the uat root is wired to the foundational, network, identity, and compute modules."
   value = {
-    environment = var.environment
-    network     = module.network.module_contract
-    gke         = module.gke_cluster.module_contract
-    secrets     = module.secrets.module_contract
-    database    = module.database.module_contract
+    environment   = var.environment
+    network       = module.network.module_contract
+    gke           = module.gke_cluster.module_contract
+    gke_workloads = var.deploy_gke_workloads ? module.gke_service_stubs[0].module_contract : null
+    cloud_run     = module.cloud_run_edge.module_contract
+    secrets       = module.secrets.module_contract
+    database      = module.database.module_contract
   }
 }

@@ -1,5 +1,12 @@
 ## GKE Cluster Module
 
-Phase 01 status: scaffold only.
+Phase 04 status: implemented.
 
-This module defines the contract for the private Autopilot cluster that will be implemented in Phase 04.
+Resources created by this module:
+- `google_container_cluster` in Autopilot mode
+
+Key characteristics:
+- private cluster with private endpoint only
+- Workload Identity enabled
+- VPC-native IP allocation using the network module's secondary ranges
+- release channel controlled per environment

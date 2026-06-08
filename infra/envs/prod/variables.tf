@@ -46,3 +46,15 @@ variable "secret_admin_members" {
   description = "Optional human or CI identities that can administer specific secrets."
   default     = {}
 }
+
+variable "enable_workload_identity_bindings" {
+  type        = bool
+  description = "Create GCP Workload Identity bindings for Kubernetes service accounts."
+  default     = false
+}
+
+variable "deploy_gke_workloads" {
+  type        = bool
+  description = "Deploy Kubernetes and Helm workloads into the GKE cluster. Keep false when applying from outside the VPC to a private-only control plane."
+  default     = false
+}

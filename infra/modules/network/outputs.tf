@@ -5,6 +5,7 @@ output "module_contract" {
     vpc_name                      = google_compute_network.vpc.name
     vpc_self_link                 = google_compute_network.vpc.self_link
     subnet_names                  = { for key, subnet in google_compute_subnetwork.subnets : key => subnet.name }
+    subnet_self_links             = { for key, subnet in google_compute_subnetwork.subnets : key => subnet.self_link }
     subnet_cidrs                  = { for key, subnet in google_compute_subnetwork.subnets : key => subnet.ip_cidr_range }
     private_google_access_subnets = [for key, subnet in var.subnets : key if subnet.private_google_access]
     nat_router_name               = google_compute_router.nat.name
@@ -13,6 +14,8 @@ output "module_contract" {
     private_service_range_name    = google_compute_global_address.private_service_access.name
     private_service_connection    = google_service_networking_connection.private_service_access.peering
     firewall_rule_names           = values(local.firewall_rule_names)
+    private_subnet_name           = try(google_compute_subnetwork.subnets["private"].name, null)
+    data_subnet_name              = try(google_compute_subnetwork.subnets["data"].name, null)
     gke_secondary_ranges_by_subnet = {
       for key, subnet in var.subnets :
       key => try(subnet.secondary_ip_ranges, {})

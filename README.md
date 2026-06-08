@@ -1,6 +1,6 @@
 # StreamFlix IaC
 
-Phase 01 through Phase 03 scaffold for the StreamFlix Terraform portfolio project on GCP.
+Phase 01 through Phase 04 scaffold for the StreamFlix Terraform portfolio project on GCP.
 
 ## Repo Layout
 
@@ -146,3 +146,33 @@ Before applying Phase 03 for real:
 - replace the placeholder `user:you@example.com` entries in each env `terraform.tfvars`
 - keep `project_id` set correctly and let the global root derive `projects/<project-number>` automatically, or override `org_policy_parent` only if you truly need a different numeric parent
 - remember that secret values themselves must be created outside Terraform
+
+## Phase 04 Compute Management
+
+The compute layer now includes:
+- a private GKE Autopilot cluster per environment via [infra/modules/gke-cluster](/E:/terraform-practice/infra/modules/gke-cluster:1)
+- Kubernetes service stubs via [infra/modules/gke-service-stubs](/E:/terraform-practice/infra/modules/gke-service-stubs:1)
+- Cloud Run edge services and optional HTTPS edge entry via [infra/modules/cloud-run-edge](/E:/terraform-practice/infra/modules/cloud-run-edge:1)
+
+Configured compute resources:
+- `google_container_cluster` in Autopilot mode with private endpoint and Workload Identity
+- Kubernetes namespaces and KSAs for `catalog`, `auth`, `stream`, and `recommendation`
+- `catalog` stub on `nginx:alpine`
+- `stream` stub on `grafana/grafana`
+- `recommendation` stub on `hashicorp/http-echo`
+- auth placeholder by default, with the Helm/Keycloak path kept available for later hardening
+- `google_vpc_access_connector`
+- two `google_cloud_run_v2_service` resources: `thumbnail-generation` and `subtitle-indexing`
+- optional Cloud Armor and global HTTPS load balancer resources when real domains are supplied
+
+Environment compute differences:
+- `dev`, `stg`, `uat` use GKE release channel `REGULAR`
+- `prod` uses GKE release channel `STABLE`
+- `prod` runs higher replica counts and stricter cluster deletion protection
+
+Important apply notes for Phase 04:
+- the optional HTTPS load balancer stays disabled until you provide real domains in the env roots
+- the in-cluster auth service is a safe placeholder by default; enabling Helm Keycloak later will need a proper admin secret strategy
+- the Serverless VPC Access connector uses its own dedicated `/28` range per environment
+- `deploy_gke_workloads` defaults to `false` because the cluster control plane is private-only; apply Kubernetes and Helm workloads later from inside the VPC or through a bastion/runner
+- `enable_workload_identity_bindings` defaults to `false` for the first environment apply; enable it after the cluster exists
