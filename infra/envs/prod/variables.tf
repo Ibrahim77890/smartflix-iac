@@ -40,3 +40,9 @@ variable "secret_ids" {
   description = "Future Secret Manager secret IDs for this environment."
   default     = []
 }
+
+variable "secret_admin_members" {
+  type        = map(string)
+  description = "Optional human or CI identities that can administer specific secrets."
+  default     = {}
+}

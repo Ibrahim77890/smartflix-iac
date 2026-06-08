@@ -105,6 +105,69 @@ locals {
       private_service_access_prefix_length = 16
     }
   }[var.environment]
+
+  identity_blueprint = {
+    service_accounts = {
+      catalog = {
+        display_name               = "StreamFlix Catalog Service"
+        description                = "Runtime identity for the catalog microservice."
+        kubernetes_namespace       = "catalog"
+        kubernetes_service_account = "catalog-ksa"
+        project_roles = [
+          "roles/logging.logWriter",
+          "roles/monitoring.metricWriter",
+          "roles/storage.objectViewer"
+        ]
+      }
+      auth = {
+        display_name               = "StreamFlix Auth Service"
+        description                = "Runtime identity for the auth microservice."
+        kubernetes_namespace       = "auth"
+        kubernetes_service_account = "auth-ksa"
+        project_roles = [
+          "roles/logging.logWriter",
+          "roles/monitoring.metricWriter"
+        ]
+      }
+      stream = {
+        display_name               = "StreamFlix Stream Service"
+        description                = "Runtime identity for the stream microservice."
+        kubernetes_namespace       = "stream"
+        kubernetes_service_account = "stream-ksa"
+        project_roles = [
+          "roles/logging.logWriter",
+          "roles/monitoring.metricWriter",
+          "roles/storage.objectViewer"
+        ]
+      }
+      notification = {
+        display_name               = "StreamFlix Notification Service"
+        description                = "Runtime identity for the notification microservice."
+        kubernetes_namespace       = "notification"
+        kubernetes_service_account = "notification-ksa"
+        project_roles = [
+          "roles/logging.logWriter",
+          "roles/monitoring.metricWriter",
+          "roles/pubsub.publisher"
+        ]
+      }
+    }
+
+    secrets = {
+      "catalog-api-key" = {
+        owner_service = "catalog"
+        accessors     = ["catalog"]
+      }
+      "jwt-signing-key" = {
+        owner_service = "auth"
+        accessors     = ["auth"]
+      }
+      "notification-webhook-url" = {
+        owner_service = "notification"
+        accessors     = ["notification"]
+      }
+    }
+  }
 }
 
 module "network" {
@@ -130,10 +193,15 @@ module "gke_cluster" {
 }
 
 module "secrets" {
-  source      = "../../modules/secrets"
-  project_id  = var.project_id
-  environment = var.environment
-  secret_ids  = var.secret_ids
+  source                   = "../../modules/secrets"
+  project_id               = var.project_id
+  environment              = var.environment
+  secret_ids               = var.secret_ids
+  labels                   = local.common_labels
+  enable_workload_identity = true
+  service_accounts         = local.identity_blueprint.service_accounts
+  secrets                  = local.identity_blueprint.secrets
+  secret_admin_members     = var.secret_admin_members
 }
 
 module "database" {

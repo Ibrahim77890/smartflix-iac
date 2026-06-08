@@ -1,6 +1,6 @@
 # StreamFlix IaC
 
-Phase 01 and Phase 02 scaffold for the StreamFlix Terraform portfolio project on GCP.
+Phase 01 through Phase 03 scaffold for the StreamFlix Terraform portfolio project on GCP.
 
 ## Repo Layout
 
@@ -127,3 +127,22 @@ NAT logging:
 - `stg`: disabled
 - `uat`: disabled
 - `prod`: disabled
+
+## Phase 03 Identity And Access Management
+
+The shared [infra/modules/secrets](/E:/terraform-practice/infra/modules/secrets:1) module now creates:
+- one GCP service account per microservice: `catalog`, `auth`, `stream`, `notification`
+- least-privilege project IAM grants with `google_project_iam_member`
+- Workload Identity bindings between Kubernetes service accounts and GCP service accounts
+- Secret Manager secret containers without secret values in Terraform state
+- per-secret `roles/secretmanager.secretAccessor` bindings only for approved services
+
+The [infra/global](/E:/terraform-practice/infra/global:1) root now defines guardrail policies for:
+- `iam.disableServiceAccountKeyCreation`
+- `compute.requireShieldedVm`
+- `compute.restrictCloudSQLPublicIp`
+
+Before applying Phase 03 for real:
+- replace the placeholder `user:you@example.com` entries in each env `terraform.tfvars`
+- keep `project_id` set correctly and let the global root derive `projects/<project-number>` automatically, or override `org_policy_parent` only if you truly need a different numeric parent
+- remember that secret values themselves must be created outside Terraform
