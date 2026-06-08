@@ -1,6 +1,6 @@
 # StreamFlix IaC
 
-Phase 01 foundation scaffold for the StreamFlix Terraform portfolio project on GCP.
+Phase 01 and Phase 02 scaffold for the StreamFlix Terraform portfolio project on GCP.
 
 ## Repo Layout
 
@@ -105,6 +105,25 @@ For Phase 01:
 - use `terraform.tfvars` only for non-sensitive values
 - reserve secret values for Secret Manager in later phases
 
-## Next Phase
+## Phase 02 Networking
 
-Phase 02 will implement the actual `network` module resources: VPC, subnets, Cloud NAT, firewall rules, and private service access.
+The shared [infra/modules/network](/E:/terraform-practice/infra/modules/network:1) module now creates:
+- one custom-mode VPC per environment
+- three subnet tiers per environment: `public`, `private`, and `data`
+- Private Google Access on `private` and `data`
+- GKE secondary ranges on the `private` subnet
+- one Cloud Router and one Cloud NAT per environment
+- explicit deny-all ingress plus map-driven allow firewall rules
+- private service access reservation and peering for future Cloud SQL and Redis
+
+Environment CIDRs:
+- `dev`: `10.10.0.0/16`
+- `stg`: `10.20.0.0/16`
+- `uat`: `10.25.0.0/16`
+- `prod`: `10.30.0.0/16`
+
+NAT logging:
+- `dev`: enabled with `ALL`
+- `stg`: disabled
+- `uat`: disabled
+- `prod`: disabled
