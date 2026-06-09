@@ -58,3 +58,9 @@ variable "deploy_gke_workloads" {
   description = "Deploy Kubernetes and Helm workloads into the GKE cluster. Keep false when applying from outside the VPC to a private-only control plane."
   default     = false
 }
+
+variable "alert_notification_emails" {
+  type        = set(string)
+  description = "Optional email addresses used for Monitoring alert notifications in this environment."
+  default     = []
+}

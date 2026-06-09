@@ -559,6 +559,20 @@ module "event_driven" {
   depends_on = [module.database, module.cloud_run_edge]
 }
 
+module "observability" {
+  source                    = "../../modules/observability"
+  project_id                = var.project_id
+  environment               = var.environment
+  logs_bucket_name          = module.database.module_contract.bucket_names.raw_logs
+  cloud_run_service_urls    = module.cloud_run_edge.module_contract.service_urls
+  pubsub_subscription_names = module.event_driven.module_contract.subscription_names
+  sql_instance_name         = module.database.module_contract.sql_instance_name
+  notification_emails       = var.alert_notification_emails
+  labels                    = local.common_labels
+
+  depends_on = [module.database, module.cloud_run_edge, module.event_driven]
+}
+
 module "gke_service_stubs" {
   count                      = var.deploy_gke_workloads ? 1 : 0
   source                     = "../../modules/gke-service-stubs"

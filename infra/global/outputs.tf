@@ -11,3 +11,8 @@ output "deployment_contract" {
   description = "Phase 07 release-management summary."
   value       = module.deployment_strategy.module_contract
 }
+
+output "policy_contract" {
+  description = "Phase 09 policy-as-code summary."
+  value       = module.policy_as_code.module_contract
+}

@@ -1,6 +1,6 @@
 # StreamFlix IaC
 
-Phase 01 through Phase 07 scaffold for the StreamFlix Terraform portfolio project on GCP.
+Phase 01 through Phase 09 scaffold for the StreamFlix Terraform portfolio project on GCP.
 
 ## Repo Layout
 
@@ -245,3 +245,36 @@ Important apply notes for Phase 07:
 - apply this phase from [infra/global](/E:/terraform-practice/infra/global:1)
 - the pipeline targets assume the Phase 04 cluster and Cloud Run naming convention already exists
 - the GKE targets reference private Autopilot clusters, so later real rollouts may need a private worker pool or another in-VPC execution path for Cloud Deploy jobs to reach the control plane
+
+## Phase 08 Observability
+
+The shared [infra/modules/observability](/E:/terraform-practice/infra/modules/observability:1) module now creates:
+- Monitoring email notification channels per environment
+- an operations log sink that exports into the Phase 05 `raw_logs` bucket
+- a custom logging metric for application errors
+- Cloud Run uptime checks
+- alert policies for:
+  - uptime failures
+  - Pub/Sub backlog
+  - Cloud SQL CPU utilization
+  - aggregate application errors
+
+Important apply notes for Phase 08:
+- apply this phase through each environment root, not through `global`
+- notification channels are optional; set `alert_notification_emails` in an env if you want real email alerts
+- the module reuses the Cloud Run, Pub/Sub, SQL, and logging resources already created in earlier phases
+
+## Phase 09 Policy As Code
+
+The shared [infra/modules/policy-as-code](/E:/terraform-practice/infra/modules/policy-as-code:1) module now creates:
+- Binary Authorization API enablement
+- a KMS-backed attestation key foundation
+- a Container Analysis attestor note
+- a Binary Authorization attestor
+- a project Binary Authorization policy in `DRYRUN_AUDIT_LOG_ONLY`
+- a versioned policy-library bucket containing sample Terraform and Kubernetes Rego policies
+
+Important apply notes for Phase 09:
+- apply this phase from [infra/global](/E:/terraform-practice/infra/global:1)
+- the Binary Authorization policy is intentionally dry-run so it can be introduced safely on top of existing environments
+- the uploaded Rego files act as a starter policy library for later CI or admission-controller enforcement

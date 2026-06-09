@@ -145,3 +145,13 @@ module "deployment_strategy" {
   pipelines                 = local.deployment_blueprint.pipelines
   labels                    = local.common_labels
 }
+
+module "policy_as_code" {
+  source         = "../modules/policy-as-code"
+  project_id     = var.project_id
+  project_prefix = "streamflix"
+  additional_whitelist_patterns = [
+    "${var.region}-docker.pkg.dev/${var.project_id}/streamflix-app-images/*"
+  ]
+  labels = local.common_labels
+}
