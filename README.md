@@ -1,6 +1,6 @@
 # StreamFlix IaC
 
-Phase 01 through Phase 05 scaffold for the StreamFlix Terraform portfolio project on GCP.
+Phase 01 through Phase 06 scaffold for the StreamFlix Terraform portfolio project on GCP.
 
 ## Repo Layout
 
@@ -199,3 +199,28 @@ Important apply notes for Phase 05:
 - this phase assumes private service access from Phase 02 already exists
 - Firestore database IDs are environment-specific because all env roots currently target the same GCP project
 - KMS keys use `prevent_destroy` to reduce accidental loss of encrypted data
+
+## Phase 06 Event-Driven Architecture
+
+The shared [infra/modules/event-driven](/E:/terraform-practice/infra/modules/event-driven:1) module now creates:
+- Pub/Sub topics and subscriptions for:
+  - `user-events`
+  - `transcode-jobs`
+  - `recommendation-refresh`
+  - `billing-events`
+- Cloud Functions Gen 2 consumers:
+  - `transcode-trigger`
+  - `notification-dispatcher`
+- a media-ingest Cloud Workflow
+- GCS upload notifications into Pub/Sub for the media bucket
+- an Eventarc trigger that routes media finalize events into the workflow
+
+Phase 06 behavior:
+- function source is packaged into the Phase 05 `tf_artifacts` bucket
+- media uploads fan into the `transcode-jobs` topic
+- the workflow calls the Phase 04 Cloud Run edge services and then publishes a follow-up event
+
+Important apply notes for Phase 06:
+- run `terraform init` again in each env root because this phase adds the `archive` provider
+- the event-driven module reuses the Phase 05 buckets and Phase 03 service accounts
+- Eventarc and Cloud Functions Gen 2 can take a bit longer on first creation because they enable and coordinate multiple services

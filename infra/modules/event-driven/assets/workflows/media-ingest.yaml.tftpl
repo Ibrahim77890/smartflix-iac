@@ -1,0 +1,31 @@
+- init:
+    assign:
+      - project_id: "${project_id}"
+      - environment: "${environment}"
+      - thumbnail_url: "${thumbnail_url}"
+      - subtitle_url: "${subtitle_url}"
+      - catalog_topic: "${catalog_topic}"
+- logStart:
+    call: sys.log
+    args:
+      text: "Starting media ingest workflow for ${environment}"
+      severity: INFO
+- generateThumbnail:
+    call: http.get
+    args:
+      url: "${thumbnail_url}"
+    result: thumbnail_result
+- indexSubtitles:
+    call: http.get
+    args:
+      url: "${subtitle_url}"
+    result: subtitle_result
+- publishCatalogEvent:
+    call: googleapis.pubsub.v1.projects.topics.publish
+    args:
+      topic: "${catalog_topic}"
+      body:
+        messages:
+          - data: "eyJlbnZpcm9ubWVudCI6IiR7ZW52aXJvbm1lbnR9Iiwic3RhdHVzIjoibWVkaWEtaW5nZXN0LWNvbXBsZXRlIn0="
+- done:
+    return: "media-ingest-complete"

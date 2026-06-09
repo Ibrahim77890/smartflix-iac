@@ -12,6 +12,7 @@ output "module_contract" {
     redis_host            = google_redis_instance.cache.host
     redis_port            = google_redis_instance.cache.port
     bucket_names          = { for key, bucket in google_storage_bucket.buckets : key => bucket.name }
+    bucket_locations      = { for key, bucket in google_storage_bucket.buckets : key => bucket.location }
     bucket_kms_keys       = { for key, key_resource in google_kms_crypto_key.bucket_keys : key => key_resource.id }
   }
 }

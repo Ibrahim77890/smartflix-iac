@@ -6,6 +6,7 @@ output "foundation_contract" {
     gke           = module.gke_cluster.module_contract
     gke_workloads = var.deploy_gke_workloads ? module.gke_service_stubs[0].module_contract : null
     cloud_run     = module.cloud_run_edge.module_contract
+    event_driven  = module.event_driven.module_contract
     secrets       = module.secrets.module_contract
     database      = module.database.module_contract
   }

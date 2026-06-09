@@ -358,6 +358,69 @@ locals {
       }
     }
   }
+
+  event_blueprint = {
+    topics = {
+      "user-events" = {
+        message_retention_duration = "604800s"
+        subscriptions = {
+          "user-events-sub" = {
+            name                       = "${var.environment}-user-events-sub"
+            ack_deadline_seconds       = 20
+            message_retention_duration = "604800s"
+          }
+        }
+      }
+      "transcode-jobs" = {
+        message_retention_duration = "604800s"
+        subscriptions = {
+          "transcode-jobs-sub" = {
+            name                       = "${var.environment}-transcode-jobs-sub"
+            ack_deadline_seconds       = 30
+            message_retention_duration = "604800s"
+          }
+        }
+      }
+      "recommendation-refresh" = {
+        message_retention_duration = "604800s"
+        subscriptions = {
+          "recommendation-refresh-sub" = {
+            name                       = "${var.environment}-recommendation-refresh-sub"
+            ack_deadline_seconds       = 20
+            message_retention_duration = "604800s"
+          }
+        }
+      }
+      "billing-events" = {
+        message_retention_duration = "604800s"
+        subscriptions = {
+          "billing-events-sub" = {
+            name                       = "${var.environment}-billing-events-sub"
+            ack_deadline_seconds       = 20
+            message_retention_duration = "604800s"
+          }
+        }
+      }
+    }
+    functions = {
+      "transcode-trigger" = {
+        source_dir            = "transcode-trigger"
+        entry_point           = "transcode_trigger"
+        topic_key             = "transcode-jobs"
+        service_account_email = "notification"
+        available_memory      = "256M"
+        timeout_seconds       = 60
+      }
+      "notification-dispatcher" = {
+        source_dir            = "notification-dispatcher"
+        entry_point           = "notification_dispatcher"
+        topic_key             = "user-events"
+        service_account_email = "notification"
+        available_memory      = "256M"
+        timeout_seconds       = 60
+      }
+    }
+  }
 }
 
 module "network" {
@@ -463,6 +526,37 @@ module "cloud_run_edge" {
   lb_backends        = local.compute_blueprint.lb_backends
   default_lb_backend = "thumbnail-generation"
   lb_path_rules      = local.compute_blueprint.lb_path_rules
+}
+
+data "google_storage_project_service_account" "gcs" {
+  project = var.project_id
+}
+
+module "event_driven" {
+  source                        = "../../modules/event-driven"
+  project_id                    = var.project_id
+  region                        = var.region
+  environment                   = var.environment
+  artifact_bucket_name          = module.database.module_contract.bucket_names.tf_artifacts
+  media_bucket_name             = module.database.module_contract.bucket_names.media_assets
+  media_bucket_location         = module.database.module_contract.bucket_locations.media_assets
+  storage_service_account_email = data.google_storage_project_service_account.gcs.email_address
+  topics                        = local.event_blueprint.topics
+  functions = {
+    for key, fn in local.event_blueprint.functions :
+    key => merge(fn, {
+      service_account_email = module.secrets.module_contract.service_account_emails[fn.service_account_email]
+    })
+  }
+  workflow_service_account_email = module.secrets.module_contract.service_account_emails.notification
+  eventarc_service_account_email = module.secrets.module_contract.service_account_emails.notification
+  workflow_thumbnail_url         = module.cloud_run_edge.module_contract.service_urls["thumbnail-generation"]
+  workflow_subtitle_url          = module.cloud_run_edge.module_contract.service_urls["subtitle-indexing"]
+  workflow_publish_topic_key     = "recommendation-refresh"
+  media_upload_topic_key         = "transcode-jobs"
+  labels                         = local.common_labels
+
+  depends_on = [module.database, module.cloud_run_edge]
 }
 
 module "gke_service_stubs" {
