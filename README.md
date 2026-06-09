@@ -1,6 +1,6 @@
 # StreamFlix IaC
 
-Phase 01 through Phase 04 scaffold for the StreamFlix Terraform portfolio project on GCP.
+Phase 01 through Phase 05 scaffold for the StreamFlix Terraform portfolio project on GCP.
 
 ## Repo Layout
 
@@ -176,3 +176,26 @@ Important apply notes for Phase 04:
 - the Serverless VPC Access connector uses its own dedicated `/28` range per environment
 - `deploy_gke_workloads` defaults to `false` because the cluster control plane is private-only; apply Kubernetes and Helm workloads later from inside the VPC or through a bastion/runner
 - `enable_workload_identity_bindings` defaults to `false` for the first environment apply; enable it after the cluster exists
+
+## Phase 05 Storage, Databases, And Caching
+
+The shared [infra/modules/database](/E:/terraform-practice/infra/modules/database:1) module now creates:
+- Cloud SQL PostgreSQL with private IP only
+- an app database inside the Cloud SQL instance
+- a prod-only Cloud SQL read replica
+- Firestore Native databases with TTL and a sample composite index
+- Memorystore Redis with private service access and auth enabled
+- KMS key ring and per-bucket crypto keys for CMEK
+- GCS buckets for `media_assets`, `raw_logs`, and `tf_artifacts`
+
+Phase 05 storage characteristics:
+- all SQL and Redis traffic stays on the private VPC
+- Firestore is environment-scoped by database ID
+- raw logs transition to Coldline after 30 days and delete after 365 days
+- bucket encryption is managed through CMEK in the same module
+- prod uses stronger deletion protection and a read replica
+
+Important apply notes for Phase 05:
+- this phase assumes private service access from Phase 02 already exists
+- Firestore database IDs are environment-specific because all env roots currently target the same GCP project
+- KMS keys use `prevent_destroy` to reduce accidental loss of encrypted data

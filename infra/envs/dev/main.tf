@@ -278,6 +278,86 @@ locals {
       }
     ]
   }
+
+  data_blueprint = {
+    availability_type                 = "ZONAL"
+    disk_size_gb                      = 10
+    enable_point_in_time_recovery     = true
+    backup_start_time                 = "03:00"
+    deletion_protection               = false
+    read_replica_enabled              = false
+    replica_tier                      = "db-f1-micro"
+    firestore_database_name           = "dev-streamflix"
+    firestore_location_id             = "nam5"
+    firestore_delete_protection_state = "DELETE_PROTECTION_DISABLED"
+    firestore_deletion_policy         = "DELETE"
+    redis_tier                        = "BASIC"
+    redis_memory_size_gb              = 1
+    kms_location                      = "us"
+    buckets = {
+      media_assets = {
+        name          = "streamflix-${var.environment}-${var.project_id}-media"
+        location      = "US"
+        storage_class = "STANDARD"
+        versioning    = true
+        force_destroy = true
+        cors = [
+          {
+            origin          = ["https://example.streamflix.dev"]
+            method          = ["GET", "HEAD", "OPTIONS"]
+            response_header = ["Content-Type"]
+            max_age_seconds = 3600
+          }
+        ]
+        lifecycle_rules = []
+      }
+      raw_logs = {
+        name          = "streamflix-${var.environment}-${var.project_id}-logs"
+        location      = "US"
+        storage_class = "STANDARD"
+        versioning    = true
+        force_destroy = true
+        cors          = []
+        lifecycle_rules = [
+          {
+            action = {
+              type          = "SetStorageClass"
+              storage_class = "COLDLINE"
+            }
+            condition = {
+              age = 30
+            }
+          },
+          {
+            action = {
+              type = "Delete"
+            }
+            condition = {
+              age = 365
+            }
+          }
+        ]
+      }
+      tf_artifacts = {
+        name          = "streamflix-${var.environment}-${var.project_id}-artifacts"
+        location      = "US"
+        storage_class = "STANDARD"
+        versioning    = true
+        force_destroy = true
+        cors          = []
+        lifecycle_rules = [
+          {
+            action = {
+              type = "Delete"
+            }
+            condition = {
+              num_newer_versions = 10
+            }
+          }
+        ]
+      }
+    }
+  }
 }
 
 module "network" {
@@ -339,12 +419,31 @@ module "secrets" {
 }
 
 module "database" {
-  source        = "../../modules/database"
-  project_id    = var.project_id
-  region        = var.region
-  environment   = var.environment
-  db_name       = "${var.environment}_streamflix"
-  instance_tier = var.db_instance_tier
+  source                            = "../../modules/database"
+  project_id                        = var.project_id
+  region                            = var.region
+  environment                       = var.environment
+  db_name                           = "${var.environment}_streamflix"
+  instance_tier                     = var.db_instance_tier
+  private_network                   = module.network.module_contract.vpc_self_link
+  availability_type                 = local.data_blueprint.availability_type
+  disk_size_gb                      = local.data_blueprint.disk_size_gb
+  enable_point_in_time_recovery     = local.data_blueprint.enable_point_in_time_recovery
+  backup_start_time                 = local.data_blueprint.backup_start_time
+  deletion_protection               = local.data_blueprint.deletion_protection
+  read_replica_enabled              = local.data_blueprint.read_replica_enabled
+  replica_tier                      = local.data_blueprint.replica_tier
+  firestore_database_name           = local.data_blueprint.firestore_database_name
+  firestore_location_id             = local.data_blueprint.firestore_location_id
+  firestore_delete_protection_state = local.data_blueprint.firestore_delete_protection_state
+  firestore_deletion_policy         = local.data_blueprint.firestore_deletion_policy
+  redis_tier                        = local.data_blueprint.redis_tier
+  redis_memory_size_gb              = local.data_blueprint.redis_memory_size_gb
+  kms_location                      = local.data_blueprint.kms_location
+  buckets                           = local.data_blueprint.buckets
+  labels                            = local.common_labels
+
+  depends_on = [module.network]
 }
 
 module "cloud_run_edge" {
