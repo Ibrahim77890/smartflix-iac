@@ -6,3 +6,8 @@ output "foundation_contract" {
     policies          = { for key, policy in google_org_policy_policy.guardrails : key => policy.name }
   }
 }
+
+output "deployment_contract" {
+  description = "Phase 07 release-management summary."
+  value       = module.deployment_strategy.module_contract
+}

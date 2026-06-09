@@ -1,6 +1,6 @@
 # StreamFlix IaC
 
-Phase 01 through Phase 06 scaffold for the StreamFlix Terraform portfolio project on GCP.
+Phase 01 through Phase 07 scaffold for the StreamFlix Terraform portfolio project on GCP.
 
 ## Repo Layout
 
@@ -224,3 +224,24 @@ Important apply notes for Phase 06:
 - run `terraform init` again in each env root because this phase adds the `archive` provider
 - the event-driven module reuses the Phase 05 buckets and Phase 03 service accounts
 - Eventarc and Cloud Functions Gen 2 can take a bit longer on first creation because they enable and coordinate multiple services
+
+## Phase 07 Deployment Strategy
+
+The shared [infra/modules/deployment-strategy](/E:/terraform-practice/infra/modules/deployment-strategy:1) module now creates:
+- Artifact Registry repositories for application images and release bundles
+- a dedicated Cloud Deploy runner service account with execution IAM
+- a versioned GCS bucket for Cloud Deploy render and rollout artifacts
+- Cloud Deploy targets for GKE and Cloud Run in `dev`, `stg`, `uat`, and `prod`
+- two delivery pipelines:
+  - `streamflix-gke`
+  - `streamflix-run`
+
+Phase 07 promotion strategy:
+- `dev` and `stg` promote without manual approval
+- `uat` and `prod` require approval on the target before promotion continues
+- GKE and Cloud Run use separate release lanes so each compute surface can ship independently
+
+Important apply notes for Phase 07:
+- apply this phase from [infra/global](/E:/terraform-practice/infra/global:1)
+- the pipeline targets assume the Phase 04 cluster and Cloud Run naming convention already exists
+- the GKE targets reference private Autopilot clusters, so later real rollouts may need a private worker pool or another in-VPC execution path for Cloud Deploy jobs to reach the control plane
