@@ -31,6 +31,12 @@ Phase 01 through Phase 09 scaffold for the StreamFlix Terraform portfolio projec
 - `infra/global/`: shared org-level controls such as org policies, DNS, and guardrails.
 - `infra/modules/*`: reusable Terraform modules consumed by environment roots.
 
+## GCP Video Demo
+
+https://github.com/user-attachments/assets/e6df00ca-9645-43ff-9b1c-f9ff65441c7d
+
+
+
 ## Phase 01 Deliverable
 
 This phase intentionally keeps the infrastructure almost empty while locking in the platform shape:
@@ -278,3 +284,4 @@ Important apply notes for Phase 09:
 - apply this phase from [infra/global](/E:/terraform-practice/infra/global:1)
 - the Binary Authorization policy is intentionally dry-run so it can be introduced safely on top of existing environments
 - the uploaded Rego files act as a starter policy library for later CI or admission-controller enforcement
+
