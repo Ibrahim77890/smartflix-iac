@@ -18,3 +18,6 @@ terraform.tfvars.json
 *.tfvars
 **/.terraform/
 
+ARCHITECTURE_DIAGRAM_GUIDE.md
+VIDEO_DEMO_CAPTURE_GUIDE.md
+

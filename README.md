@@ -1,287 +1,206 @@
-# StreamFlix IaC
+# infrastructure-as-Code
 
-Phase 01 through Phase 09 scaffold for the StreamFlix Terraform portfolio project on GCP.
+SmartFlix is a cloud-based streaming platform concept built to show how a real digital product can be designed and managed with modern infrastructure practices. Instead of creating resources manually, this project models the full backend platform in code so the same setup can be repeated, improved, and scaled safely. It includes networking, identity, compute, storage, event-driven services, deployment pipelines, observability, and governance controls. The overall idea is to represent how a real company could grow from a small development setup into a more production-ready cloud platform.
+
+## Why Terraform
+
+Terraform is an Infrastructure as Code tool that helps us define cloud resources in simple configuration files instead of creating everything manually from the console. It solves problems like inconsistent environments, manual mistakes, poor repeatability, and difficulty tracking changes over time. Terraform works by reading the desired infrastructure written in `.tf` files, comparing that desired state with the real cloud environment, and then creating, updating, or deleting resources to make both match. Its own architecture is based on providers, state, modules, and execution plans. Providers let Terraform talk to platforms like Google Cloud, state remembers what Terraform manages, modules help organize reusable blocks, and plans show what will happen before actual changes are applied.
 
 ## Repo Layout
 
 ```text
 .
-├── bootstrap/
-├── infra/
-│   ├── envs/
-│   │   ├── dev/
-│   │   ├── stg/
-│   │   ├── uat/
-│   │   └── prod/
-│   ├── global/
-│   └── modules/
-│       ├── database/
-│       ├── gke-cluster/
-│       ├── network/
-│       └── secrets/
-├── .pre-commit-config.yaml
-├── .terraform-version
-└── .tool-versions
+|-- bootstrap/
+|-- infra/
+|   |-- envs/
+|   |   |-- dev/
+|   |   |-- stg/
+|   |   |-- uat/
+|   |   `-- prod/
+|   |-- global/
+|   `-- modules/
+|       |-- cloud-run-edge/
+|       |-- database/
+|       |-- deployment-strategy/
+|       |-- event-driven/
+|       |-- gke-cluster/
+|       |-- gke-service-stubs/
+|       |-- network/
+|       |-- observability/
+|       |-- policy-as-code/
+|       `-- secrets/
+|-- ARCHITECTURE_DIAGRAM_GUIDE.md
+|-- VIDEO_DEMO_CAPTURE_GUIDE.md
+`-- README.md
 ```
 
 ## Folder Contract
 
-- `bootstrap/`: one-time local-state root that creates the GCS bucket for remote Terraform state.
-- `infra/envs/*`: one root per environment, each with isolated state and its own backend prefix.
-- `infra/global/`: shared org-level controls such as org policies, DNS, and guardrails.
-- `infra/modules/*`: reusable Terraform modules consumed by environment roots.
+- `bootstrap/` is used to create the remote Terraform state bucket.
+- `infra/envs/` contains one Terraform root for each environment such as `dev`, `stg`, `uat`, and `prod`.
+- `infra/global/` contains shared controls that apply across the whole project, such as governance and deployment strategy.
+- `infra/modules/` contains reusable Terraform modules for networking, compute, storage, events, observability, and policy.
+- root-level markdown files are used for documentation, architecture explanation, and demo preparation.
 
-## GCP Video Demo
+## GCP Demo Video
 
 https://github.com/user-attachments/assets/e6df00ca-9645-43ff-9b1c-f9ff65441c7d
 
+## Project Implementation Flow
 
+In order to simulate a real-world scenario and progressive infrastructure acquisition, this project is divided into phases of implementation.
 
-## Phase 01 Deliverable
+## Phase 01: Foundation
 
-This phase intentionally keeps the infrastructure almost empty while locking in the platform shape:
-- reusable module boundaries exist
-- each environment has its own Terraform root
-- remote state is ready through GCS
-- variables are typed and documented
-- tooling and pre-commit hooks are declared
+This phase creates the base structure of the project so all future infrastructure can be managed in a clean and scalable way. It prepares the repository layout, environment separation, remote state usage, validation flow, and Terraform module boundaries. The goal here is not heavy cloud creation, but a strong starting platform.
 
-## Bootstrap The Remote State Bucket
+Resources created or prepared:
+- **GCS bucket for Terraform remote state**
+- **environment roots for dev, stg, uat, and prod**
+- **shared Terraform modules structure**
+- **tooling files such as pre-commit and version control helpers**
 
-1. Update [bootstrap/terraform.tfvars](/E:/terraform-practice/bootstrap/terraform.tfvars:1) with your real `project_id` and a globally unique `state_bucket_name`.
-2. Run the bootstrap root:
+Environment limitations:
+- `dev`, `stg`, `uat`, and `prod` exist only as isolated Terraform roots at this stage
+- no full application infrastructure runs yet
+- this phase is mostly about structure and future readiness
 
-```bash
-cd bootstrap
-terraform init
-terraform apply
-```
+## Phase 02: Networking
 
-3. After the bucket is created, initialize each Terraform root with the bucket name:
+This phase builds the private network foundation for SmartFlix. It separates public, private, and data traffic areas so later compute and databases can run in a safer layout. It also prepares private access for managed services.
 
-```bash
-cd infra/envs/dev
-terraform init -backend-config="bucket=YOUR_STATE_BUCKET"
+Resources created or updated:
+- **custom VPC per environment**
+- **public subnet**
+- **private subnet**
+- **data subnet**
+- **Cloud Router**
+- **Cloud NAT**
+- **firewall rules**
+- **private service access connection**
 
-cd ../stg
-terraform init -backend-config="bucket=YOUR_STATE_BUCKET"
+Environment limitations:
+- `dev` is more debugging-friendly and keeps NAT logging enabled
+- `stg` and `uat` follow the same structure but with fewer operational extras
+- `prod` uses the same segmented pattern but is intended for stricter and safer use
 
-cd ../uat
-terraform init -backend-config="bucket=YOUR_STATE_BUCKET"
+## Phase 03: Identity And Access Management
 
-cd ../prod
-terraform init -backend-config="bucket=YOUR_STATE_BUCKET"
+This phase introduces controlled access for services and secret ownership. Instead of letting workloads share broad permissions, each logical service gets its own identity and only the permissions it needs. This makes the system more secure and more realistic.
 
-cd ../../global
-terraform init -backend-config="bucket=YOUR_STATE_BUCKET"
-```
+Resources created or updated:
+- **GCP service accounts for catalog, auth, stream, notification, and recommendation**
+- **IAM role bindings**
+- **Secret Manager secret containers**
+- **Workload Identity mappings**
+- **global guardrail policies**
 
-Each root already defines a unique `prefix` in its own `backend.tf`, so only the bucket name must be injected at init time.
+Environment limitations:
+- `dev` is easier for testing identities and secret flow
+- `stg` and `uat` help validate least-privilege behavior before production
+- `prod` is the most sensitive environment and should avoid loose permission experiments
 
-## Terraform Roots
+## Phase 04: Compute Management
 
-- [infra/envs/dev](/E:/terraform-practice/infra/envs/dev:1)
-- [infra/envs/stg](/E:/terraform-practice/infra/envs/stg:1)
-- [infra/envs/uat](/E:/terraform-practice/infra/envs/uat:1)
-- [infra/envs/prod](/E:/terraform-practice/infra/envs/prod:1)
-- [infra/global](/E:/terraform-practice/infra/global:1)
+This phase adds the application runtime layer. SmartFlix now gets its private Kubernetes platform and supporting serverless HTTP services. This is where the system starts to look like a real streaming backend platform.
 
-## Tooling
+Resources created or updated:
+- **private GKE Autopilot cluster**
+- **Kubernetes namespaces and service accounts**
+- **Cloud Run services for thumbnail-generation and subtitle-indexing**
+- **Serverless VPC Access connector**
+- **optional edge and load balancer path**
 
-Install these tools locally:
-- Terraform `>= 1.7`
-- `pre-commit`
-- `tflint`
-- `tfsec`
-- `checkov`
-- `asdf` optionally, using [.tool-versions](/E:/terraform-practice/.tool-versions:1)
+Environment limitations:
+- `dev`, `stg`, and `uat` use the `REGULAR` GKE release channel
+- `prod` uses the `STABLE` GKE release channel
+- `prod` has higher replicas and stronger protection settings
+- GKE workloads may require in-VPC access because the cluster is private
 
-Run the quality checks:
+## Phase 05: Storage, Database, And Caching
 
-```bash
-pre-commit install
-pre-commit run --all-files
-```
+This phase adds the persistent data layer. SmartFlix now stores relational data, document-style application data, cache data, logs, media files, and artifacts. This is the point where the platform becomes stateful and more realistic.
 
-## Sensitive Data Rule
+Resources created or updated:
+- **Cloud SQL PostgreSQL**
+- **application database**
+- **Firestore Native database**
+- **Memorystore Redis**
+- **KMS key ring and crypto keys**
+- **GCS media bucket**
+- **GCS logs bucket**
+- **GCS artifacts bucket**
 
-Do not commit plaintext secrets.
+Environment limitations:
+- `dev`, `stg`, and `uat` are simpler and lower-cost
+- `prod` uses stronger deletion protection and more resilient database settings
+- `prod` also enables a Cloud SQL read replica
 
-For Phase 01:
-- use `terraform.tfvars` only for non-sensitive values
-- reserve secret values for Secret Manager in later phases
+## Phase 06: Event-Driven Architecture
 
-## Phase 02 Networking
+This phase gives SmartFlix an asynchronous workflow. Instead of making every process run in a direct request path, uploads and application events can now trigger background processing. This is important for things like media handling, notifications, and recommendation refreshes.
 
-The shared [infra/modules/network](/E:/terraform-practice/infra/modules/network:1) module now creates:
-- one custom-mode VPC per environment
-- three subnet tiers per environment: `public`, `private`, and `data`
-- Private Google Access on `private` and `data`
-- GKE secondary ranges on the `private` subnet
-- one Cloud Router and one Cloud NAT per environment
-- explicit deny-all ingress plus map-driven allow firewall rules
-- private service access reservation and peering for future Cloud SQL and Redis
+Resources created or updated:
+- **Pub/Sub topics**
+- **Pub/Sub subscriptions**
+- **Cloud Functions Gen 2**
+- **Cloud Workflow**
+- **Eventarc trigger**
+- **Cloud Storage notifications**
 
-Environment CIDRs:
-- `dev`: `10.10.0.0/16`
-- `stg`: `10.20.0.0/16`
-- `uat`: `10.25.0.0/16`
-- `prod`: `10.30.0.0/16`
+Environment limitations:
+- `dev` is best for safely testing event flow and function behavior
+- `stg` and `uat` help verify that workflows behave correctly before release
+- `prod` carries the real background orchestration pattern and should be treated more carefully during updates
 
-NAT logging:
-- `dev`: enabled with `ALL`
-- `stg`: disabled
-- `uat`: disabled
-- `prod`: disabled
+## Phase 07: Deployment Strategy
 
-## Phase 03 Identity And Access Management
+This phase introduces controlled software delivery. Instead of manually pushing everything, the project now has a deployment path that can promote application changes across environments in a more organized way.
 
-The shared [infra/modules/secrets](/E:/terraform-practice/infra/modules/secrets:1) module now creates:
-- one GCP service account per microservice: `catalog`, `auth`, `stream`, `notification`
-- least-privilege project IAM grants with `google_project_iam_member`
-- Workload Identity bindings between Kubernetes service accounts and GCP service accounts
-- Secret Manager secret containers without secret values in Terraform state
-- per-secret `roles/secretmanager.secretAccessor` bindings only for approved services
+Resources created or updated:
+- **Artifact Registry repositories**
+- **Cloud Deploy runner service account**
+- **Cloud Deploy artifact bucket**
+- **Cloud Deploy targets**
+- **Cloud Deploy pipelines**
 
-The [infra/global](/E:/terraform-practice/infra/global:1) root now defines guardrail policies for:
-- `iam.disableServiceAccountKeyCreation`
-- `compute.requireShieldedVm`
-- `compute.restrictCloudSQLPublicIp`
+Environment limitations:
+- `dev` and `stg` move faster and do not require manual approval
+- `uat` and `prod` are more controlled and require approval
+- `prod` is meant for carefully promoted releases, not direct experimentation
 
-Before applying Phase 03 for real:
-- replace the placeholder `user:you@example.com` entries in each env `terraform.tfvars`
-- keep `project_id` set correctly and let the global root derive `projects/<project-number>` automatically, or override `org_policy_parent` only if you truly need a different numeric parent
-- remember that secret values themselves must be created outside Terraform
+## Phase 08: Observability
 
-## Phase 04 Compute Management
+This phase makes the platform easier to monitor and troubleshoot. A real project is not complete if it only creates resources but cannot explain what is happening when performance drops or failures occur.
 
-The compute layer now includes:
-- a private GKE Autopilot cluster per environment via [infra/modules/gke-cluster](/E:/terraform-practice/infra/modules/gke-cluster:1)
-- Kubernetes service stubs via [infra/modules/gke-service-stubs](/E:/terraform-practice/infra/modules/gke-service-stubs:1)
-- Cloud Run edge services and optional HTTPS edge entry via [infra/modules/cloud-run-edge](/E:/terraform-practice/infra/modules/cloud-run-edge:1)
+Resources created or updated:
+- **Monitoring notification channels**
+- **log sink**
+- **custom logging metric**
+- **uptime checks**
+- **alert policies for Cloud Run, Pub/Sub, SQL, and application errors**
 
-Configured compute resources:
-- `google_container_cluster` in Autopilot mode with private endpoint and Workload Identity
-- Kubernetes namespaces and KSAs for `catalog`, `auth`, `stream`, and `recommendation`
-- `catalog` stub on `nginx:alpine`
-- `stream` stub on `grafana/grafana`
-- `recommendation` stub on `hashicorp/http-echo`
-- auth placeholder by default, with the Helm/Keycloak path kept available for later hardening
-- `google_vpc_access_connector`
-- two `google_cloud_run_v2_service` resources: `thumbnail-generation` and `subtitle-indexing`
-- optional Cloud Armor and global HTTPS load balancer resources when real domains are supplied
+Environment limitations:
+- `dev` is useful for testing alerts and visibility setup
+- `stg` and `uat` help verify alert quality before production use
+- `prod` should carry the final operational signals and meaningful alert thresholds
 
-Environment compute differences:
-- `dev`, `stg`, `uat` use GKE release channel `REGULAR`
-- `prod` uses GKE release channel `STABLE`
-- `prod` runs higher replica counts and stricter cluster deletion protection
+## Phase 09: Policy As Code
 
-Important apply notes for Phase 04:
-- the optional HTTPS load balancer stays disabled until you provide real domains in the env roots
-- the in-cluster auth service is a safe placeholder by default; enabling Helm Keycloak later will need a proper admin secret strategy
-- the Serverless VPC Access connector uses its own dedicated `/28` range per environment
-- `deploy_gke_workloads` defaults to `false` because the cluster control plane is private-only; apply Kubernetes and Helm workloads later from inside the VPC or through a bastion/runner
-- `enable_workload_identity_bindings` defaults to `false` for the first environment apply; enable it after the cluster exists
+This phase adds governance and security controls as code. It shows that SmartFlix is not only deployable, but also manageable under rules, compliance thinking, and controlled release trust.
 
-## Phase 05 Storage, Databases, And Caching
+Resources created or updated:
+- **Binary Authorization attestor**
+- **Container Analysis note**
+- **KMS-backed attestation key**
+- **Binary Authorization policy**
+- **policy library bucket with Rego policy files**
 
-The shared [infra/modules/database](/E:/terraform-practice/infra/modules/database:1) module now creates:
-- Cloud SQL PostgreSQL with private IP only
-- an app database inside the Cloud SQL instance
-- a prod-only Cloud SQL read replica
-- Firestore Native databases with TTL and a sample composite index
-- Memorystore Redis with private service access and auth enabled
-- KMS key ring and per-bucket crypto keys for CMEK
-- GCS buckets for `media_assets`, `raw_logs`, and `tf_artifacts`
+Environment limitations:
+- `dev` is still a learning and validation space
+- `stg` and `uat` help test security policy effects before strict rollout
+- `prod` is where policy matters most, so this environment should eventually move from dry-run checks to stronger enforcement
 
-Phase 05 storage characteristics:
-- all SQL and Redis traffic stays on the private VPC
-- Firestore is environment-scoped by database ID
-- raw logs transition to Coldline after 30 days and delete after 365 days
-- bucket encryption is managed through CMEK in the same module
-- prod uses stronger deletion protection and a read replica
+## Closing Note
 
-Important apply notes for Phase 05:
-- this phase assumes private service access from Phase 02 already exists
-- Firestore database IDs are environment-specific because all env roots currently target the same GCP project
-- KMS keys use `prevent_destroy` to reduce accidental loss of encrypted data
-
-## Phase 06 Event-Driven Architecture
-
-The shared [infra/modules/event-driven](/E:/terraform-practice/infra/modules/event-driven:1) module now creates:
-- Pub/Sub topics and subscriptions for:
-  - `user-events`
-  - `transcode-jobs`
-  - `recommendation-refresh`
-  - `billing-events`
-- Cloud Functions Gen 2 consumers:
-  - `transcode-trigger`
-  - `notification-dispatcher`
-- a media-ingest Cloud Workflow
-- GCS upload notifications into Pub/Sub for the media bucket
-- an Eventarc trigger that routes media finalize events into the workflow
-
-Phase 06 behavior:
-- function source is packaged into the Phase 05 `tf_artifacts` bucket
-- media uploads fan into the `transcode-jobs` topic
-- the workflow calls the Phase 04 Cloud Run edge services and then publishes a follow-up event
-
-Important apply notes for Phase 06:
-- run `terraform init` again in each env root because this phase adds the `archive` provider
-- the event-driven module reuses the Phase 05 buckets and Phase 03 service accounts
-- Eventarc and Cloud Functions Gen 2 can take a bit longer on first creation because they enable and coordinate multiple services
-
-## Phase 07 Deployment Strategy
-
-The shared [infra/modules/deployment-strategy](/E:/terraform-practice/infra/modules/deployment-strategy:1) module now creates:
-- Artifact Registry repositories for application images and release bundles
-- a dedicated Cloud Deploy runner service account with execution IAM
-- a versioned GCS bucket for Cloud Deploy render and rollout artifacts
-- Cloud Deploy targets for GKE and Cloud Run in `dev`, `stg`, `uat`, and `prod`
-- two delivery pipelines:
-  - `streamflix-gke`
-  - `streamflix-run`
-
-Phase 07 promotion strategy:
-- `dev` and `stg` promote without manual approval
-- `uat` and `prod` require approval on the target before promotion continues
-- GKE and Cloud Run use separate release lanes so each compute surface can ship independently
-
-Important apply notes for Phase 07:
-- apply this phase from [infra/global](/E:/terraform-practice/infra/global:1)
-- the pipeline targets assume the Phase 04 cluster and Cloud Run naming convention already exists
-- the GKE targets reference private Autopilot clusters, so later real rollouts may need a private worker pool or another in-VPC execution path for Cloud Deploy jobs to reach the control plane
-
-## Phase 08 Observability
-
-The shared [infra/modules/observability](/E:/terraform-practice/infra/modules/observability:1) module now creates:
-- Monitoring email notification channels per environment
-- an operations log sink that exports into the Phase 05 `raw_logs` bucket
-- a custom logging metric for application errors
-- Cloud Run uptime checks
-- alert policies for:
-  - uptime failures
-  - Pub/Sub backlog
-  - Cloud SQL CPU utilization
-  - aggregate application errors
-
-Important apply notes for Phase 08:
-- apply this phase through each environment root, not through `global`
-- notification channels are optional; set `alert_notification_emails` in an env if you want real email alerts
-- the module reuses the Cloud Run, Pub/Sub, SQL, and logging resources already created in earlier phases
-
-## Phase 09 Policy As Code
-
-The shared [infra/modules/policy-as-code](/E:/terraform-practice/infra/modules/policy-as-code:1) module now creates:
-- Binary Authorization API enablement
-- a KMS-backed attestation key foundation
-- a Container Analysis attestor note
-- a Binary Authorization attestor
-- a project Binary Authorization policy in `DRYRUN_AUDIT_LOG_ONLY`
-- a versioned policy-library bucket containing sample Terraform and Kubernetes Rego policies
-
-Important apply notes for Phase 09:
-- apply this phase from [infra/global](/E:/terraform-practice/infra/global:1)
-- the Binary Authorization policy is intentionally dry-run so it can be introduced safely on top of existing environments
-- the uploaded Rego files act as a starter policy library for later CI or admission-controller enforcement
-
+This project is designed to represent how I would build and grow a cloud platform in a structured way using Terraform on Google Cloud. Each phase adds one important layer of maturity, starting from the foundation and ending with observability and governance. The result is a full SmartFlix Infrastructure as Code project that is easier to understand, easier to repeat, and closer to how real enterprise systems are managed.
