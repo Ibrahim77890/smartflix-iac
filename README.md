@@ -2,6 +2,8 @@
 
 SmartFlix is a cloud-based streaming platform concept built to show how a real digital product can be designed and managed with modern infrastructure practices. Instead of creating resources manually, this project models the full backend platform in code so the same setup can be repeated, improved, and scaled safely. It includes networking, identity, compute, storage, event-driven services, deployment pipelines, observability, and governance controls. The overall idea is to represent how a real company could grow from a small development setup into a more production-ready cloud platform.
 
+<img width="5448" height="3262" alt="smartflix-archi" src="https://github.com/user-attachments/assets/0136b4b9-e0e0-40ad-9064-7a1633a3485c" />
+
 ## Why Terraform
 
 Terraform is an Infrastructure as Code tool that helps us define cloud resources in simple configuration files instead of creating everything manually from the console. It solves problems like inconsistent environments, manual mistakes, poor repeatability, and difficulty tracking changes over time. Terraform works by reading the desired infrastructure written in `.tf` files, comparing that desired state with the real cloud environment, and then creating, updating, or deleting resources to make both match. Its own architecture is based on providers, state, modules, and execution plans. Providers let Terraform talk to platforms like Google Cloud, state remembers what Terraform manages, modules help organize reusable blocks, and plans show what will happen before actual changes are applied.
