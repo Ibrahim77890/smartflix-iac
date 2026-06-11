@@ -31,8 +31,6 @@ Terraform is an Infrastructure as Code tool that helps us define cloud resources
 |       |-- observability/
 |       |-- policy-as-code/
 |       `-- secrets/
-|-- ARCHITECTURE_DIAGRAM_GUIDE.md
-|-- VIDEO_DEMO_CAPTURE_GUIDE.md
 `-- README.md
 ```
 
