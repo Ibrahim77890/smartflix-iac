@@ -1,4 +1,4 @@
-# infrastructure-as-Code
+# Smart-Flix
 
 SmartFlix is a cloud-based streaming platform concept built to show how a real digital product can be designed and managed with modern infrastructure practices. Instead of creating resources manually, this project models the full backend platform in code so the same setup can be repeated, improved, and scaled safely. It includes networking, identity, compute, storage, event-driven services, deployment pipelines, observability, and governance controls. The overall idea is to represent how a real company could grow from a small development setup into a more production-ready cloud platform.
 
